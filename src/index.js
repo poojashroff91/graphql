@@ -8,6 +8,7 @@ const typeDefs = `
 
     type Query {
         greeting(name: String, position: String): String!
+        add(a: Float!, b: Float!): Float
         me: User!
         post: Post!
     }
@@ -52,6 +53,13 @@ const resolvers = {
                 title: 'Hello world',
                 body: 'This is my first post ever!',
                 published: true
+            }
+        },
+        add(parent, args, ctx, info) {
+            if(args.a && args.b) {
+                return args.a + args.b;
+            } else {
+                return 0;
             }
         }
     }
