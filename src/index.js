@@ -11,7 +11,9 @@ const typeDefs = `
         releaseYear: Int
         rating: Float
         inStock: Boolean!
+        author: String
     }
+    
 `
 
 
@@ -33,6 +35,9 @@ const resolvers = {
         },
         inStock () {
             return false;
+        },
+        author () {
+            return 'Pooja Shroff';
         }
     }
 }
