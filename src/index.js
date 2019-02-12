@@ -5,15 +5,24 @@ import { GraphQLServer } from 'graphql-yoga';
 // Scalar types - String, Boolean, Int, FLoat, ID
 
 const typeDefs = `
+
     type Query {
-        title: String!
-        price: Float!
-        releaseYear: Int
-        rating: Float
-        inStock: Boolean!
-        author: String
+        greeting(name: String, position: String): String!
+        me: User!
+        post: Post!
     }
-    
+    type User {
+        id: ID!
+        name: String!
+        email: String!
+        age: Int
+    }
+    type Post {
+        id: ID!
+        title: String!
+        body: String!
+        published: Boolean!
+    }
 `
 
 
@@ -21,23 +30,29 @@ const typeDefs = `
 
 const resolvers = {
     Query: {
-        title () {
-            return 'Perfect Storm';
+        greeting(parent, args, ctx, info) {
+            if(args.name && args.position){
+                return `Hello ${args.name}! You are my favorite ${args.position}`;  
+            } else {
+                return `Hello!`;  
+            }
+            
         },
-        price () {
-            return 9.99;
+        me () {
+            return {
+                id: '123098',
+                name: 'Mike',
+                email: 'mike@example.com',
+                age: null
+            }
         },
-        releaseYear () {
-            return 1990;
-        },
-        rating () {
-            return null;
-        },
-        inStock () {
-            return false;
-        },
-        author () {
-            return 'Pooja Shroff';
+        post () {
+            return {
+                id: '123098',
+                title: 'Hello world',
+                body: 'This is my first post ever!',
+                published: true
+            }
         }
     }
 }
