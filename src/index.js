@@ -4,14 +4,50 @@ import { GraphQLServer } from 'graphql-yoga';
 
 // Scalar types - String, Boolean, Int, FLoat, ID
 
+// Demo user data
+
+const users = [{
+    id: 1,
+    name: 'Pooja Shroff',
+    email: 'pooja@example.com',
+    age: 27
+}, {
+    id: 2,
+    name: 'Santosh Prabhu',
+    email: 'santosh@example.com',
+    age: 27
+}, {
+    id: 3,
+    name: 'Deepa Shroff',
+    email: 'deepa@example.com'
+}];
+
+// Demo posts data
+
+const posts = [{
+    id: 1000,
+    title: 'My first post',
+    body: 'I am learning Graph QL',
+    published: true
+}, {
+    id: 1001,
+    title: 'My second post',
+    body: 'I like succulents',
+    published: true
+}, {
+    id: 1002,
+    title: 'My third post',
+    body: 'I like to paint with watercolors',
+    published: true
+}]
+
 const typeDefs = `
 
     type Query {
-        greeting(name: String, position: String): String!
-        add(numbers: [Float!]!): Float!
-        grades: [Int!]!
+        users(query: String): [User!]!
         me: User!
         post: Post!
+        posts(query: String): [Post!]!
     }
     type User {
         id: ID!
@@ -32,14 +68,6 @@ const typeDefs = `
 
 const resolvers = {
     Query: {
-        greeting(parent, args, ctx, info) {
-            if(args.name && args.position){
-                return `Hello ${args.name}! You are my favorite ${args.position}`;  
-            } else {
-                return `Hello!`;  
-            }
-            
-        },
         me () {
             return {
                 id: '123098',
@@ -56,17 +84,25 @@ const resolvers = {
                 published: true
             }
         },
-        add(parent, args, ctx, info) {
-            const numbers = args.numbers;
-            if(numbers.length === 0){
-                return 0;
+        users (parent, args, ctx, info) {
+            if(args.query){
+                return users.filter((user) => {
+                    return user.name.toLowerCase().includes(args.query.toLowerCase());
+                });
             } else {
-                const reducer = (accumulator, currentValue) => accumulator + currentValue;
-                return numbers.reduce(reducer);
+                return users;
             }
         },
-        grades(parent, args, ctx, info){
-            return [99, 80, 93];
+        posts (parent, args, ctx, info) {
+            if(args.query){
+                return posts.filter((post) => {
+                    const titleMatch =  post.title.toLowerCase().includes(args.query.toLowerCase());
+                    const bodyMatch = post.body.toLowerCase().includes(args.query.toLowerCase());
+                    return titleMatch || bodyMatch;
+                });
+            } else {
+                return posts;
+            }
         }
     }
 }
