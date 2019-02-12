@@ -1,11 +1,43 @@
-import myCurrentLocation, {message, getGreeting} from './myModule';
+import { GraphQLServer } from 'graphql-yoga';
 
-console.log('Hello Graph QL');
-console.log(message);
-console.log(myCurrentLocation);
-console.log(getGreeting('Pooja'));
+// Type definitions (schema)
+
+// Scalar types - String, Boolean, Int, FLoat, ID
+
+const typeDefs = `
+    type Query {
+        hello: String!
+        name: String!
+        location: String!
+        bio: String!
+    }
+`
 
 
-import add, {subtract} from './math';
-console.log(add(4,5));
-console.log(subtract(8,3));
+// Resolvers
+
+const resolvers = {
+    Query: {
+        hello(){
+            return 'This is my first query';
+        },
+        name(){
+            return 'Pooja Shroff';
+        },
+        location(){
+            return 'San Jose';
+        },
+        bio(){
+            return 'Likes vanilla icecream'
+        }
+    }
+}
+
+const server = new GraphQLServer({
+    typeDefs,
+    resolvers
+});
+
+server.start(() => {
+    console.log('The server is starting');
+})
