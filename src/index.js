@@ -7,17 +7,17 @@ import { GraphQLServer } from 'graphql-yoga';
 // Demo user data
 
 const users = [{
-    id: 1,
+    id: '1',
     name: 'Pooja Shroff',
     email: 'pooja@example.com',
     age: 27
 }, {
-    id: 2,
+    id: '2',
     name: 'Santosh Prabhu',
     email: 'santosh@example.com',
     age: 27
 }, {
-    id: 3,
+    id: '3',
     name: 'Deepa Shroff',
     email: 'deepa@example.com'
 }];
@@ -28,17 +28,20 @@ const posts = [{
     id: 1000,
     title: 'My first post',
     body: 'I am learning Graph QL',
-    published: true
+    published: true,
+    author: '1'
 }, {
     id: 1001,
     title: 'My second post',
     body: 'I like succulents',
-    published: true
+    published: true,
+    author: '1'
 }, {
     id: 1002,
     title: 'My third post',
     body: 'I like to paint with watercolors',
-    published: true
+    published: true,
+    author: '2'
 }]
 
 const typeDefs = `
@@ -60,6 +63,7 @@ const typeDefs = `
         title: String!
         body: String!
         published: Boolean!
+        author: User!
     }
 `
 
@@ -104,6 +108,14 @@ const resolvers = {
                 return posts;
             }
         }
+    },
+    Post: {
+        author (parent, args, ctx, info) { //Here parent is the post entity
+            return users.find((user) => {
+                return user.id === parent.author;
+            })
+        }
+
     }
 }
 
