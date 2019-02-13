@@ -25,23 +25,47 @@ const users = [{
 // Demo posts data
 
 const posts = [{
-    id: 1000,
+    id: '1000',
     title: 'My first post',
     body: 'I am learning Graph QL',
     published: true,
     author: '1'
 }, {
-    id: 1001,
+    id: '1001',
     title: 'My second post',
     body: 'I like succulents',
     published: true,
     author: '1'
 }, {
-    id: 1002,
+    id: '1002',
     title: 'My third post',
     body: 'I like to paint with watercolors',
     published: true,
     author: '2'
+}]
+
+// Comments
+
+const comments = [{
+    id: '2000',
+    text: 'This is my first comment',
+    author: '1',
+    post: '1000'
+},{
+    id: '2001',
+    text: 'This is a nice comment',
+    author: '2',
+    post: '1000'
+},{
+    id: '2002',
+    text: 'This is a mean comment',
+    author: '2',
+    post: '1001'
+},{
+    id: '2003',
+    text: 'This comment is on YouTube',
+    author: '3',
+    post: '1002'
 }]
 
 const typeDefs = `
@@ -51,6 +75,7 @@ const typeDefs = `
         me: User!
         post: Post!
         posts(query: String): [Post!]!
+        comments: [Comment!]!
     }
     type User {
         id: ID!
@@ -58,6 +83,7 @@ const typeDefs = `
         email: String!
         age: Int
         posts: [Post!]!
+        comments: [Comment!]!
     }
     type Post {
         id: ID!
@@ -65,6 +91,13 @@ const typeDefs = `
         body: String!
         published: Boolean!
         author: User!
+        comments: [Comment!]!
+    }
+    type Comment {
+        id: ID!
+        text: String!
+        author: User!
+        post: Post!
     }
 `
 
@@ -108,12 +141,20 @@ const resolvers = {
             } else {
                 return posts;
             }
+        },
+        comments (parent, args, ctx, info) {
+            return comments;
         }
     },
     Post: {
         author (parent, args, ctx, info) { //Here parent is the post entity
             return users.find((user) => {
                 return user.id === parent.author;
+            })
+        },
+        comments (parent, args, ctx, info) {
+            return comments.filter((comment)=>{
+                return comment.post === parent.id;
             })
         }
 
@@ -122,6 +163,23 @@ const resolvers = {
         posts (parent, args, ctx, info) { //Here we have access to User via parent
             return posts.filter((post) => {
                 return post.author === parent.id;
+            })
+        },
+        comments (parent, args, ctx, info) {
+            return comments.filter((comment) => {
+                return comment.author === parent.id;
+            })
+        }
+    },
+    Comment: {
+        author (parent, args, ctx, info) {
+            return users.find((user) => {
+                return user.id === parent.author;
+            })
+        },
+        post (parent, args, ctx, info) {
+            return posts.find((post) => {
+                return post.id === parent.post;
             })
         }
     }
