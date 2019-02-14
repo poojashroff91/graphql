@@ -1,5 +1,5 @@
 import { GraphQLServer } from 'graphql-yoga';
-
+import uuidv4 from 'uuid/v4';
 // Type definitions (schema)
 
 // Scalar types - String, Boolean, Int, FLoat, ID
@@ -76,6 +76,9 @@ const typeDefs = `
         post: Post!
         posts(query: String): [Post!]!
         comments: [Comment!]!
+    }
+    type Mutation {
+        createUser(name: String!, email: String!, age: Int): User!
     }
     type User {
         id: ID!
@@ -158,6 +161,24 @@ const resolvers = {
             })
         }
 
+    },
+    Mutation: {
+        createUser(parent, args, ctx, info) {
+            const emailTaken = users.some((user)=>{
+                return user.email === args.email;
+            });
+            if(emailTaken){
+                throw new Error ('Email has already been taken');
+            } 
+            const user = {
+                id: uuidv4(),
+                name: args.name,
+                email: args.email,
+                age: args.age
+            };
+            users.push(user);
+            return user;
+        }
     },
     User: {
         posts (parent, args, ctx, info) { //Here we have access to User via parent
