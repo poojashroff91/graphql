@@ -6,7 +6,7 @@ import uuidv4 from 'uuid/v4';
 
 // Demo user data
 
-const users = [{
+let users = [{
     id: '1',
     name: 'Pooja Shroff',
     email: 'pooja@example.com',
@@ -24,7 +24,7 @@ const users = [{
 
 // Demo posts data
 
-const posts = [{
+let posts = [{
     id: '1000',
     title: 'My first post',
     body: 'I am learning Graph QL',
@@ -46,7 +46,7 @@ const posts = [{
 
 // Comments
 
-const comments = [{
+let comments = [{
     id: '2000',
     text: 'This is my first comment',
     author: '1',
@@ -81,6 +81,9 @@ const typeDefs = `
         createUser(data: CreateUserInput!): User!
         createPost(data: CreatePostInput!): Post!
         createComment(data: CreateCommentInput!): Comment!
+        deleteUser(id: ID!): User!
+        deletePost(id: ID!): Post!
+        deleteComment(id: ID!): Comment!
     }
     input CreateUserInput {
         name: String!
@@ -231,6 +234,52 @@ const resolvers = {
 
             comments.push(comment);
             return comment;
+        },
+        deleteUser(parent, args, ctx, info) {
+            const userIndex = users.findIndex((user) =>{
+                return user.id === args.id
+            });
+            if(userIndex === -1){
+                throw new Error('User not found');
+            }
+            const deletedUsers = users.splice(userIndex, 1);
+            // Remove all posts this user wrote
+            posts = posts.filter((post)=> {
+                const match = post.author === args.id;
+                // Remove all comments on this post
+                comments = comments.filter((comment) => {
+                    return comment.post !== post.id
+                });
+                return !match;
+            })
+            return deletedUsers[0];
+        },
+        deletePost(parent, args, ctx, info) {
+            const postIndex = posts.findIndex((post)=>{
+                return post.id === args.id;
+            });
+
+            if(postIndex === -1){
+                throw new Error('Post not found');
+            }
+
+            const deletedPosts = posts.splice(postIndex, 1);
+            // Delete all comments on that post
+            comments.filter((comment)=>{
+                return comment.post !== args.id
+            });
+
+            return deletedPosts[0];
+        },
+        deleteComment(parent, args, ctx, info) {
+            const commentIndex = comments.findIndex((comment) => {
+                return comment.id === args.id;
+            });
+            if(commentIndex === -1){
+                throw new Error('Comment not found');
+            }
+            const deletedComments = comments.splice(commentIndex, 1);
+            return deletedComments[0];
         }
     },
     User: {
