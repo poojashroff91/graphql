@@ -80,6 +80,7 @@ const typeDefs = `
     type Mutation {
         createUser(name: String!, email: String!, age: Int): User!
         createPost(title: String!, body: String!, published: Boolean!, author: ID!): Post!
+        createComment(text: String!, author: ID!, post: ID!): Comment!
     }
     type User {
         id: ID!
@@ -181,7 +182,6 @@ const resolvers = {
             return user;
         },
         createPost(parent, args, ctx, info) {
-            console.log(args);
             const userExists = users.some((user) => {
                 return user.id === args.author;
             });
@@ -197,10 +197,31 @@ const resolvers = {
                 author: args.author
             }
             posts.push(post);
-            console.log('Successfully created');
-            console.log(posts);
-            console.log(post);
             return post;
+        },
+        createComment(parent, args, ctx, info){
+            const userExists = users.some((user)=>{
+                return user.id === args.author;
+            });
+            if(!userExists){
+                throw new Error('Author does not exist');
+            }
+            const postExists = posts.some((post)=>{
+                return post.id === args.post;
+            });
+            if(!postExists){
+                throw new Error('Post does not exist');
+            }
+
+            const comment = {
+                id: uuidv4(),
+                text: args.text,
+                author: args.author,
+                post: args.post
+            }
+
+            comments.push(comment);
+            return comment;
         }
     },
     User: {
