@@ -1,4 +1,5 @@
 import uuidv4 from 'uuid/v4';
+import { type } from 'os';
 
 const Mutation = {
     createUser(parent, args, { db }, info) {
@@ -97,6 +98,27 @@ const Mutation = {
         }
         const deletedComments = db.comments.splice(commentIndex, 1);
         return deletedComments[0];
+    },
+    updateUser(parent, args, { db }, info){
+        const { id, data } = args;
+        const user = db.users.find((user)=> user.id === id);
+        if(!user) {
+            throw new Error ('User not found.');
+        }
+        if(typeof data.email === 'string') {
+            const emailTaken = db.users.some((user) => user.email === data.email);
+            if(emailTaken) {
+                throw new Error ('Email already taken');
+            }
+            user.email = data.email;
+        }
+        if(typeof data.name === 'string') {
+            user.name = data.name;
+        }
+        if(typeof data.age !== undefined) {
+            user.age = data.age;
+        }
+        return user;
     }
 };
 
