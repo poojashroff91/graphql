@@ -17,6 +17,47 @@ const Mutation = {
         db.users.push(user);
         return user;
     },
+    updateUser(parent, args, { db }, info){
+        const { id, data } = args;
+        const user = db.users.find((user)=> user.id === id);
+        if(!user) {
+            throw new Error ('User not found.');
+        }
+        if(typeof data.email === 'string') {
+            const emailTaken = db.users.some((user) => user.email === data.email);
+            if(emailTaken) {
+                throw new Error ('Email already taken');
+            }
+            user.email = data.email;
+        }
+        if(typeof data.name === 'string') {
+            user.name = data.name;
+        }
+        if(typeof data.age !== undefined) {
+            user.age = data.age;
+        }
+        return user;
+    },
+    deleteUser(parent, args, { db }, info) {
+        const userIndex = db.users.findIndex((user) =>{
+            return user.id === args.id
+        });
+        if(userIndex === -1){
+            throw new Error('User not found');
+        }
+        const deletedUsers = db.users.splice(userIndex, 1);
+        // Remove all posts this user wrote
+        db.posts = db.posts.filter((post)=> {
+            const match = post.author === args.id;
+            // Remove all comments on this post
+            db.comments = db.comments.filter((comment) => {
+                return comment.post !== post.id
+            });
+            return !match;
+        })
+        return deletedUsers[0];
+    },
+
     createPost(parent, args, { db, pubsub }, info) {
         const userExists = db.users.some((user) => {
             return user.id === args.data.author;
@@ -41,106 +82,6 @@ const Mutation = {
         }
 
         return post;
-    },
-    createComment(parent, args, { db , pubsub }, info){
-        const userExists = db.users.some((user)=>{
-            return user.id === args.data.author;
-        });
-        if(!userExists){
-            throw new Error('Author does not exist');
-        }
-        const postExists = db.posts.some((post)=>{
-            return post.id === args.data.post;
-        });
-        if(!postExists){
-            throw new Error('Post does not exist');
-        }
-
-        const comment = {
-            id: uuidv4(),
-            ...args.data
-        }
-
-        db.comments.push(comment);
-        pubsub.publish(`comment ${args.data.post}`, { comment });
-        return comment;
-    },
-    deleteUser(parent, args, { db }, info) {
-        const userIndex = db.users.findIndex((user) =>{
-            return user.id === args.id
-        });
-        if(userIndex === -1){
-            throw new Error('User not found');
-        }
-        const deletedUsers = db.users.splice(userIndex, 1);
-        // Remove all posts this user wrote
-        db.posts = db.posts.filter((post)=> {
-            const match = post.author === args.id;
-            // Remove all comments on this post
-            db.comments = db.comments.filter((comment) => {
-                return comment.post !== post.id
-            });
-            return !match;
-        })
-        return deletedUsers[0];
-    },
-    deletePost(parent, args, { db, pubsub }, info) {
-        const postIndex = db.posts.findIndex((post)=>{
-            return post.id === args.id;
-        });
-
-        if(postIndex === -1){
-            throw new Error('Post not found');
-        }
-
-        const [post] = db.posts.splice(postIndex, 1);
-        // Delete all comments on that post
-        db.comments.filter((comment)=>{
-            return comment.post !== args.id
-        });
-
-        if(post.published){
-            pubsub.publish('post', { 
-                post: {
-                    mutation: 'DELETED',
-                    data: post
-                }
-            });
-            
-        }
-
-        return post;
-    },
-    deleteComment(parent, args, { db }, info) {
-        const commentIndex = db.comments.findIndex((comment) => {
-            return comment.id === args.id;
-        });
-        if(commentIndex === -1){
-            throw new Error('Comment not found');
-        }
-        const deletedComments = db.comments.splice(commentIndex, 1);
-        return deletedComments[0];
-    },
-    updateUser(parent, args, { db }, info){
-        const { id, data } = args;
-        const user = db.users.find((user)=> user.id === id);
-        if(!user) {
-            throw new Error ('User not found.');
-        }
-        if(typeof data.email === 'string') {
-            const emailTaken = db.users.some((user) => user.email === data.email);
-            if(emailTaken) {
-                throw new Error ('Email already taken');
-            }
-            user.email = data.email;
-        }
-        if(typeof data.name === 'string') {
-            user.name = data.name;
-        }
-        if(typeof data.age !== undefined) {
-            user.age = data.age;
-        }
-        return user;
     },
     updatePost(parent, args, { db, pubsub }, info){
         const { id, data } = args;
@@ -185,7 +126,64 @@ const Mutation = {
         }
         return post;
     },
-    updateComment(parent, args, { db }, info) {
+    deletePost(parent, args, { db, pubsub }, info) {
+        const postIndex = db.posts.findIndex((post)=>{
+            return post.id === args.id;
+        });
+
+        if(postIndex === -1){
+            throw new Error('Post not found');
+        }
+
+        const [post] = db.posts.splice(postIndex, 1);
+        // Delete all comments on that post
+        db.comments.filter((comment)=>{
+            return comment.post !== args.id
+        });
+
+        if(post.published){
+            pubsub.publish('post', { 
+                post: {
+                    mutation: 'DELETED',
+                    data: post
+                }
+            });
+            
+        }
+
+        return post;
+    },
+
+    createComment(parent, args, { db , pubsub }, info){
+        const userExists = db.users.some((user)=>{
+            return user.id === args.data.author;
+        });
+        if(!userExists){
+            throw new Error('Author does not exist');
+        }
+        const postExists = db.posts.some((post)=>{
+            return post.id === args.data.post;
+        });
+        if(!postExists){
+            throw new Error('Post does not exist');
+        }
+
+        const comment = {
+            id: uuidv4(),
+            ...args.data
+        }
+        db.comments.push(comment);
+        
+        pubsub.publish(`comment ${args.data.post}`, { 
+            comment: {
+                mutation: 'CREATED',
+                data: comment
+            }
+        });
+            
+        return comment;
+    },
+    updateComment(parent, args, { db, pubsub }, info) {
         const { id, data } = args;
         const comment = db.comments.find((comment) => comment.id === id);
         if(!comment) {
@@ -195,7 +193,32 @@ const Mutation = {
         if(typeof data.text === 'string') {
             comment.text = data.text;
         }
+
+        pubsub.publish(`comment ${comment.post}`, { 
+            comment: {
+                mutation: 'UPDATED',
+                data: comment
+            }
+        });
         return comment;
+    },
+    deleteComment(parent, args, { db, pubsub }, info) {
+        const commentIndex = db.comments.findIndex((comment) => {
+            return comment.id === args.id;
+        });
+        if(commentIndex === -1){
+            throw new Error('Comment not found');
+        }
+        const [ comment ] = db.comments.splice(commentIndex, 1);
+        pubsub.publish(`comment ${comment.post}`, { 
+            comment: {
+                mutation: 'DELETED',
+                data: comment
+            }
+        });
+        return comment;
+
+
     }
 };
 
